@@ -3,57 +3,59 @@ package io.polybius.phonevalidator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class MobilePhoneNumberValidator {
+
+  public ValidationResultDto result = new ValidationResultDto();
+
   public ValidationResultDto validate(List<String> phoneNumbers) {
-    ValidationResultDto result = new ValidationResultDto();
-    result.invalidPhones = new ArrayList<>();
-    result.validPhonesByCountry = new HashMap<>();
+    result.setValidPhonesByCountry(new HashMap<>());
     for (int i = 0; i < phoneNumbers.size(); i++) {
-      String phoneNumber = phoneNumbers.get(i);
-      boolean isValid;
-      String country = null;
-      if(phoneNumber.startsWith("370")||phoneNumber.startsWith("+370")) {
-        country = "LT";
-        phoneNumber = phoneNumber.replaceAll("\\)", "").replaceAll("\\(", "").replaceAll(" ", "").replaceAll("-", "");
-        if (phoneNumber.startsWith("370")) {
-          isValid = phoneNumber.charAt(3) == '6' && phoneNumber.substring(3).length() == 8;
-        }else{
-          isValid = phoneNumber.charAt(4) == '6' && phoneNumber.substring(4).length() == 8;
-        }
-      } else if (phoneNumber.startsWith("+371") || phoneNumber.startsWith("371")) {
-        country = "LV";
-        if (phoneNumber.startsWith("370")) {
-          isValid = phoneNumber.charAt(3) == '2' && phoneNumber.substring(3).length() == 8;
-        }
-        else {
-          isValid = phoneNumber.charAt(4) == '2' && phoneNumber.substring(4).length() == 8;
-        }
-      } else if (phoneNumber.startsWith("372")) {
-        country = "EE";
-        phoneNumber = phoneNumber.replaceAll("\\)", "").replaceAll("\\(", "").replaceAll(" ", "").replaceAll("-", "");
-        if (phoneNumber.startsWith("+372")) {
-          isValid = phoneNumber.charAt(4) == '5' && (phoneNumber.substring(4).length() == 7
-              || phoneNumber.substring(4).length() == 8);
-        } else {
-          isValid = phoneNumber.charAt(3) == '5' && phoneNumber.substring(3).length() == 7;
-        }
-      } else {
-        isValid = false;
-      }
-
-      if (isValid) {
-        if (!result.validPhonesByCountry.containsKey(country)) {
-          result.validPhonesByCountry.put(country, new ArrayList<>());
-        }
-
-        result.validPhonesByCountry.get(country).add(phoneNumbers.get(0));
-      } else {
-        result.invalidPhones.add(phoneNumbers.get(i));
-      }
+    isValid(phoneNumbers.get(i));
     }
-
-
     return result;
   }
-}
+
+  public void isValid(String phoneNumber) {
+    String country = null;
+    Boolean isValid = false;
+    String sanitisedPhoneNumber = phoneNumber.replaceAll("\\)", "").replaceAll("\\(", "").replaceAll("\\+", "").replaceAll("-", "");
+
+    String countryCode = sanitisedPhoneNumber.substring(0,4);
+    switch(countryCode) {
+      case "3706":
+        country = "LT";
+        isValid = sanitisedPhoneNumber.substring(4).length() == 7;
+        break;
+      case "3712":
+        country = "LV";
+        isValid = sanitisedPhoneNumber.substring(4).length() == 7;
+        break;
+      case "3725":
+        country = "EE";
+        isValid = (sanitisedPhoneNumber.substring(3).length() == 6
+                || sanitisedPhoneNumber.substring(3).length() == 7);
+        break;
+    }
+
+      if (countryCode.startsWith("324")) {
+        country = "BE";
+        isValid = (sanitisedPhoneNumber.charAt(4) == 7 || sanitisedPhoneNumber.charAt(4) == 8
+                || sanitisedPhoneNumber.charAt(4) == 9 || (sanitisedPhoneNumber.charAt(4) == 5 && sanitisedPhoneNumber.charAt(5) == 6))
+                && sanitisedPhoneNumber.length() == 9;
+      }
+        if (isValid) {
+          if (!result.getValidPhonesByCountry().containsKey(country)) {
+            result.getValidPhonesByCountry().put(country, new ArrayList<>());
+          }
+
+          result.getValidPhonesByCountry().get(country).add(phoneNumber);
+        } else {
+          result.setInvalidPhones(new ArrayList<>());
+          result.getInvalidPhones().add(phoneNumber);
+        }
+
+    }
+  }
+
